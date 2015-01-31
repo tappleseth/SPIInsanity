@@ -1,0 +1,154 @@
+/* 
+ * File:   Main.c
+ * Author: applet
+ *
+ * Created on January 26, 2015, 3:23 PM
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+
+/*
+ * 
+ */
+
+
+// PIC18F25K22 Configuration Bit Settings
+
+// 'C' source line config statements
+
+
+// PIC18F25K22 Configuration Bit Settings
+
+// 'C' source line config statements
+
+#include <p18F25K22.h>
+#include <usart.h>
+#include <spi.h>
+#include "tomIsLaw.h"
+
+//LOCAL NODE SPI SETUP
+#define SPI_SCK LATCbits.LATC3//clock output, C7
+#define SPI_SDO  LATCbits.LATC5 //Serial Data Output, C6
+#define SPI_SDI PORTCbits.RC4 //Serial Data Input, C5
+#define SPI_COMMANDER LATAbits.LATA5 //chip select, RA5
+
+//GLOBAL THINGS
+#define VOLT 0xAA //hey remote node, you OK bro?
+#define AFFR 0x0C //remote node: "yeah man"
+#define QUER 0xC0 
+
+unsigned char tomStar;
+int main(int argc, char** argv) {
+    int turboPhail;
+    turboPhail = 0;
+    //initialize stuff we did
+    Setup();
+    //test();
+    //test(); //IO test code
+
+    //the primary functionality of local node: SPI COMMAND HQ
+    turboPhail = SPI_KNIGHT_COMMANDER();
+    //^^returns int if we exit for some reason (reason to be given by int value)
+   
+    return (turboPhail);
+}
+
+
+void Setup(){
+   /* STEP 1: in which we try to turn on the SPI
+    * SPI_FOSC_4: SPI Master mode, clock = FOSC/4
+    * MODE_10: data transmitted on rising edge (of what? SCLK?)
+    * SMPEND: means that we sample input data at END of output
+    */
+    OpenSPI1( SPI_FOSC_64, MODE_00, SMPMID );
+    
+    TRISBbits.TRISB0 = 0;
+    TRISBbits.TRISB1 = 0;
+    TRISCbits.RC6 = 0;
+    TRISCbits.RC7 = 1;
+    //TRISAbits.TRISA7 = 1;
+    //OSCCON = OSCCON | 0x01;
+   // ANSELA=0;
+    //ANSELB=0;
+    ANSELC=0;
+   // ANSELD=0;
+   // STEP 2: USART SETUP
+
+   Open1USART(USART_TX_INT_OFF &
+              USART_RX_INT_OFF &
+              USART_ASYNCH_MODE &
+              USART_EIGHT_BIT &
+           USART_CONT_RX &
+              USART_BRGH_LOW,
+              129);
+ 
+}
+int SPI_KNIGHT_COMMANDER(void){
+//unsigned char array[] = "This crap sucks";
+    int phailDetectorUnit;
+    int i;
+    unsigned char tomLord;
+    //char failLord;
+    unsigned char inByte[2];
+    unsigned char outByte;
+    unsigned char setValue[5];
+    unsigned int longOut;
+    unsigned char outByteH;
+    unsigned char outByteL;
+    unsigned char package[3];
+    package[2] = 0;
+
+    setValue[4] = 0;
+    //outByte[1] = 0;
+    inByte[1] = 0;
+    //failLord = 0xBE;
+    //phailDetectorUnit = 0;
+
+   // PORTBbits.RB1=0;
+
+    //outByte = 0xFF;
+   // localMemory(outByte,0,0);
+
+    putrs1USART("\r\nApplehansontaft:\r\n Crap Systems LTD");
+    longOut = 0xFF;
+   
+    while(1) {
+        gets1USART(inByte,1);
+        //NOTE TO US: STICKY (REQUIRES TWO BUTTON PRESSES)!
+        //increment by no more than .5%
+        if(inByte[0] == 'w') {
+            longOut = longOut - 1;
+
+        }
+        //decrement by no more than .5%
+        else if (inByte[0] == 's'){
+            longOut = longOut + 1;
+
+        }
+        //set point: 5
+       /// else if (inByte[])
+        outByteL = (unsigned char)((longOut & 0x3)<<4);
+        outByteH = (unsigned char)((longOut & 0x3FC)>>2);
+        package[0] = outByteL;
+        package[1] = outByteH;
+        package[2] = 0;
+        putsSPI1(package); //send
+        puts1USART(inByte);
+
+        
+    }
+return phailDetectorUnit;
+}
+
+unsigned char localMemory(unsigned char saveMe, int RW, int index){
+    static unsigned char testMemory;
+    //if reading, return char at index saveMe
+    if (RW == 1){
+        return testMemory;
+    } else {
+        testMemory = saveMe;
+    }
+
+    return 0;
+}
