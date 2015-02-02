@@ -30,7 +30,8 @@ unsigned int pack_tx(unsigned char command,
         unsigned char data2, unsigned char data3,
         unsigned char status);
 
-
+void writeSRAM(unsigned char data, int address);
+unsigned char readSRAM(int address);
 //GLOBAL VARIABLES
 
 
