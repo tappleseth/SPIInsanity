@@ -44,6 +44,12 @@ int main(int argc, char** argv) {
     turboPhail = 0;
     //initialize stuff we did
     Setup();
+    putc1USART(0x0C);
+    putrs1USART("AHT Mobile Medical\r\n");
+    putrs1USART("[0-5] Volt. Presets\r\n");
+    putrs1USART("[w] +.02 V\r\n");
+    putrs1USART("[s] -.02 V\r\n");
+    
     //test();
     //test(); //IO test code
 
@@ -69,8 +75,8 @@ void Setup(){
     TRISCbits.RC7 = 1;
     //TRISAbits.TRISA7 = 1;
     //OSCCON = OSCCON | 0x01;
-   // ANSELA=0;
-    //ANSELB=0;
+    ANSELA=0;
+    ANSELB=0;
     ANSELC=0;
    // ANSELD=0;
    // STEP 2: USART SETUP
@@ -79,9 +85,43 @@ void Setup(){
               USART_RX_INT_OFF &
               USART_ASYNCH_MODE &
               USART_EIGHT_BIT &
-           USART_CONT_RX &
+              USART_CONT_RX &
               USART_BRGH_LOW,
               129);
+
+    /* SRAM setup stuff */
+
+   //Control signals
+   TRISAbits.TRISA0 = 0; //!CS
+   TRISAbits.TRISA1 = 0; //!OE
+   TRISAbits.TRISA2 = 0; //!WE
+
+   PORTAbits.RA0 = 1; //!CS disabled
+   PORTAbits.RA1 = 1; //!OE disabled
+   PORTAbits.RA2 = 1; //!WE disabled
+
+   //address bits
+   TRISAbits.TRISA3 = 0; //addr0
+   TRISAbits.TRISA4 = 0; //addr1
+   //TRISAbits.TRISA7 = 0; //addr1
+   //TRISAbits.TRISA6 = 0; //addr1
+
+   PORTAbits.RA3 = 0;
+   PORTAbits.RA4 = 0;
+  // PORTAbits.RA7 = 0;
+   //PORTAbits.RA6 = 0;
+
+   //IO bits
+   //all are initially set to be inputs
+   TRISB = 0xFF;
+   //all are initially low
+   PORTBbits.RB0 = 0;
+   PORTBbits.RB0 = 0;
+   PORTBbits.RB0 = 0;
+   PORTBbits.RB0 = 0;
+   PORTBbits.RB0 = 0;
+   PORTBbits.RB0 = 0;
+   PORTBbits.RB0 = 0;
  
 }
 int SPI_KNIGHT_COMMANDER(void){
@@ -91,17 +131,22 @@ int SPI_KNIGHT_COMMANDER(void){
     unsigned char tomLord;
     //char failLord;
     unsigned char inByte[2];
-    unsigned char outByte;
     unsigned char setValue[5];
     unsigned int longOut;
     unsigned char outByteH;
     unsigned char outByteL;
     unsigned char package[3];
-    package[2] = 0;
+    int percentage[2];
 
-    setValue[4] = 0;
-    //outByte[1] = 0;
+    unsigned char upperStorage;
+    unsigned char lowerStorage;
+    i=0;
+
+
     inByte[1] = 0;
+    setValue[4] = 0;
+    //numberInputs=0;
+    //outByte[1] = 0;
     //failLord = 0xBE;
     //phailDetectorUnit = 0;
 
@@ -109,46 +154,180 @@ int SPI_KNIGHT_COMMANDER(void){
 
     //outByte = 0xFF;
    // localMemory(outByte,0,0);
+    percentage[1] = 0;
 
-    putrs1USART("\r\nApplehansontaft:\r\n Crap Systems LTD");
+
+   // putrs1USART("\r\nApplehansontaft: Crap Systems LTD");
     longOut = 0xFF;
    
-    while(1) {
+    while(1){
         gets1USART(inByte,1);
+        //sprintf(numInputs,"%d",numberInputs);
+       // writeSRAM(numInputs[0],0);
         //NOTE TO US: STICKY (REQUIRES TWO BUTTON PRESSES)!
         //increment by no more than .5%
         if(inByte[0] == 'w') {
-            longOut = longOut - 1;
-
+            if (longOut < 1023) longOut = longOut + 1;
+            //store record of increment (0xAA) command and resulting longOut
+            upperStorage = 0xA;//upper 4 bits of longout
+            lowerStorage = (longOut & 0x3F); //lower 6 bits of longOut
+            writeSRAM(upperStorage,1);
+            writeSRAM(lowerStorage,3);
+    
         }
         //decrement by no more than .5%
         else if (inByte[0] == 's'){
-            longOut = longOut + 1;
-
+            if (longOut > 1) longOut = longOut - 1;
+            //store record of decrement (0xBB) command and resulting longOut
+            upperStorage = 0xB; //upper 4 bits of longout
+            lowerStorage = (longOut & 0x3F); //lower 6 bits of longOut
+            writeSRAM(upperStorage,1);
+            writeSRAM(lowerStorage,3);
+            
         }
+        //PRESETS
+        else if (inByte[0]=='0'){ //TURN IT OFF!!! TURN IT OFF!!!!
+            longOut = 1;
+        }
+        else if (inByte[0]=='1'){
+            longOut = 205; //205
+ 
+          
+        }
+        else if (inByte[0]=='2'){
+            longOut = 411; //411
+         
+           
+        }
+        else if (inByte[0]=='3'){
+            longOut = 615; //615
+         
+           
+        }
+        else if (inByte[0]=='4'){
+            longOut = 819; //819
+         
+           
+        }
+        else if (inByte[0]=='5'){ //FULL POWER!!!!!
+            longOut = 1023;
+        
+        }
+        else if (inByte[0]=='x'){
+            upperStorage = readSRAM(1);
+           // lowerStorage = readSRAM(1);
+            if (upperStorage == 0xA){
+                putrs1USART("last incremented\r\n");
+            }
+            if (upperStorage == 0xB) {
+                putrs1USART("last decremented\r\n");
+            }
+        }
+        
+         if (((RCSTA1 >> 1) & 0x1) != 0)// TOM'S OVERFLOW ERROR DETECTOR
+         {
+            RCSTA1 ^ 0x2;
+            printf("TEST");
+         }
         //set point: 5
        /// else if (inByte[])
-        outByteL = (unsigned char)((longOut & 0x3)<<4);
+        outByteL = (unsigned char)((longOut & 0x003)<<4);
         outByteH = (unsigned char)((longOut & 0x3FC)>>2);
+        
         package[0] = outByteL;
         package[1] = outByteH;
         package[2] = 0;
-        putsSPI1(package); //send
-        puts1USART(inByte);
-
+        
+        putsSPI1(package);
+        //outByte[0] = readSRAM(0);
+        //outByte[1] = 0;
+       //// puts1USART(outByte);
+        //while (0 != (WriteSPI(0x55)));
         
     }
 return phailDetectorUnit;
 }
+void writeSRAM(unsigned char data, int address){
+/*TRISAbits.RA0 = 0 //!CS
+   TRISAbits.RA1 = 0; //!OE
+   TRISAbits.RA2 = 0; //!WE
+   TRISAbits.RA3 = 0; //addr0
+   TRISAbits.RA4 = 0; //addr1
+ */
+    unsigned char addr0;
+    unsigned char addr1;
+    unsigned char addr2;
+    unsigned char addr3;
+    int delay;
 
-unsigned char localMemory(unsigned char saveMe, int RW, int index){
-    static unsigned char testMemory;
-    //if reading, return char at index saveMe
-    if (RW == 1){
-        return testMemory;
-    } else {
-        testMemory = saveMe;
-    }
+    addr0 = (address & 0x01);
+    addr1 = (address >> 1) & 0x01;
+    addr2 = (address >> 2) & 0x01;
+    addr3 = (address >> 3) & 0x01;
+    
+    PORTAbits.RA0 = 0; //SRAM enabled
+    PORTAbits.RA1 = 1; //not outputing
+    PORTAbits.RA2 = 1; //writing TO the SRAM
 
-    return 0;
+    //PORTAbits.RA3 = addr0;
+    //PORTAbits.RA4 = addr1;
+
+    //IO pins set to be outputs
+    TRISB = 0x00;
+
+    PORTAbits.RA3 = addr0;
+    PORTAbits.RA4 = addr1;
+   // PORTAbits.RA7 = addr0;
+    //PORTAbits.RA6 = addr1;
+    LATB = data;
+
+    PORTAbits.RA2 = 0; //writing TO the SRAM
+
+    PORTAbits.RA2 = 1; //not writing TO the SRAM
+    PORTAbits.RA0 = 1; //SRAM disabled
+
+    //IO pins reset to be inputs
+    TRISB = 0xff;
+}
+
+unsigned char readSRAM(int address){
+    /*TRISAbits.RA0 = 0 //!CS
+   TRISAbits.RA1 = 0; //!OE
+   TRISAbits.RA2 = 0; //!WE
+   TRISAbits.RA3 = 0; //addr0
+   TRISAbits.RA4 = 0; //addr1
+ */
+    unsigned char addr0;
+    unsigned char addr1;
+    unsigned char addr2;
+    unsigned char addr3;
+    unsigned char toSender;
+    int delay;
+    addr0 = (address & 0x01);
+    addr1 = (address >> 1) & 0x01;
+    addr2 = (address >> 2) & 0x01;
+    addr3 = (address >> 3) & 0x01;
+    //IO pins set to inputs
+    TRISB = 0xFF;
+
+    PORTAbits.RA0 = 0; //SRAMw enabled
+    PORTAbits.RA1 = 1; //not outputing
+    PORTAbits.RA2 = 1; //writing TO the SRAM
+
+    //LATA = address;
+    PORTAbits.RA3 = addr0;
+    PORTAbits.RA4 = addr1;
+    //PORTAbits.RA7 = addr0;
+    //PORTAbits.RA6 = addr1;
+
+    PORTAbits.RA1 = 0; //output is a GO!
+
+    //give some time to read
+    toSender = PORTB;
+    //disable everything
+
+    PORTAbits.RA0 = 1; //SRAM disabled
+    PORTAbits.RA1 = 1; //not outputing
+
+    return toSender;
 }
