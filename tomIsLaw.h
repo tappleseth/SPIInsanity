@@ -17,7 +17,9 @@
 #include <p18F25K22.h>
 
 //FUNCTION PROTOTYPES
-
+//void TomAndHisLameUSARTFix(void);
+//void printExcitingIntroMessages(void);
+//void delay(int duration);
 unsigned char SPI_GENERAL(unsigned char);
 void Setup(void);
 void write_enable(void);
@@ -31,6 +33,9 @@ unsigned int pack_tx(unsigned char command,
         unsigned char data0, unsigned char data1,
         unsigned char data2, unsigned char data3,
         unsigned char status);
+
+void writeSRAM(unsigned char data, int address);
+unsigned char readSRAM(int address);
 
 //GLOBAL VARIABLES
 
