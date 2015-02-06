@@ -44,11 +44,9 @@ int main(int argc, char** argv) {
     turboPhail = 0;
     //initialize stuff we did
     Setup();
-    putc1USART(0x0C);
-    putrs1USART("AHT Mobile Medical\r\n");
-    putrs1USART("[0-5] Volt. Presets\r\n");
-    putrs1USART("[w] +.02 V\r\n");
-    putrs1USART("[s] -.02 V\r\n");
+    Menu();
+    
+   // putrs1USART("[?] Print Duty Cycle %!\r\n");
     
     //test();
     //test(); //IO test code
@@ -60,7 +58,18 @@ int main(int argc, char** argv) {
     return (turboPhail);
 }
 
+void Menu(){
 
+   putc1USART(0x0C);
+    putrs1USART("AHT Mobile Medical\r\n");
+    putrs1USART("--=Control Scheme=--\r\n");
+    putrs1USART("[0-5] Volt. Presets\r\n");
+    putrs1USART("[w] Increment +.02 V\r\n");
+    putrs1USART("[s] Decrement -.02 V\r\n");
+    putrs1USART("[x] Memory Recall\r\n");
+    putrs1USART("[z] DEGAUSS!\r\n");
+    return;
+}
 void Setup(){
    /* STEP 1: in which we try to turn on the SPI
     * SPI_FOSC_4: SPI Master mode, clock = FOSC/4
@@ -136,10 +145,14 @@ int SPI_KNIGHT_COMMANDER(void){
     unsigned char outByteH;
     unsigned char outByteL;
     unsigned char package[3];
-    int percentage[2];
-
+    int percentage;
+    unsigned char tomTest[2];
     unsigned char upperStorage;
     unsigned char lowerStorage;
+    unsigned char test[2];
+    unsigned char bilko[3];
+    bilko[2] = 0;
+    
     i=0;
 
 
@@ -153,12 +166,11 @@ int SPI_KNIGHT_COMMANDER(void){
    // PORTBbits.RB1=0;
 
     //outByte = 0xFF;
-   // localMemory(outByte,0,0);
-    percentage[1] = 0;
+   // localMemory(outByte,0,0)
 
 
    // putrs1USART("\r\nApplehansontaft: Crap Systems LTD");
-    longOut = 0xFF;
+    longOut = 0x02;
    
     while(1){
         gets1USART(inByte,1);
@@ -173,7 +185,7 @@ int SPI_KNIGHT_COMMANDER(void){
             lowerStorage = (longOut & 0x3F); //lower 6 bits of longOut
             writeSRAM(upperStorage,1);
             writeSRAM(lowerStorage,3);
-    
+            putrs1USART("+.025V\r\n");
         }
         //decrement by no more than .5%
         else if (inByte[0] == 's'){
@@ -183,67 +195,104 @@ int SPI_KNIGHT_COMMANDER(void){
             lowerStorage = (longOut & 0x3F); //lower 6 bits of longOut
             writeSRAM(upperStorage,1);
             writeSRAM(lowerStorage,3);
-            
+            putrs1USART("-.025V\r\n");
         }
         //PRESETS
         else if (inByte[0]=='0'){ //TURN IT OFF!!! TURN IT OFF!!!!
             longOut = 1;
+            putrs1USART("0 V \r\n");
+            upperStorage = 0x1;
+            writeSRAM(upperStorage,1);
         }
         else if (inByte[0]=='1'){
             longOut = 205; //205
- 
-          
+            putrs1USART("1 V \r\n");
+            upperStorage = 0x2;
+            writeSRAM(upperStorage,1);
         }
         else if (inByte[0]=='2'){
             longOut = 411; //411
-         
+            putrs1USART("2 V \r\n");
+            upperStorage = 0x3;
+            writeSRAM(upperStorage,1);
            
         }
         else if (inByte[0]=='3'){
-            longOut = 615; //615
-         
+            longOut = 613; //613
+            putrs1USART("3 V \r\n");
+            upperStorage = 0x4;
+            writeSRAM(upperStorage,1);
            
         }
         else if (inByte[0]=='4'){
-            longOut = 819; //819
-         
+            longOut = 823; //823
+            putrs1USART("4 V \r\n");
+            upperStorage = 0x5;
+            writeSRAM(upperStorage,1);
+
            
         }
         else if (inByte[0]=='5'){ //FULL POWER!!!!!
             longOut = 1023;
+            putrs1USART("5 V \r\n");
+            upperStorage = 0x6;
+            writeSRAM(upperStorage,1);
         
         }
         else if (inByte[0]=='x'){
+            putrs1USART("Memory recall (WIP)\r\n");
             upperStorage = readSRAM(1);
            // lowerStorage = readSRAM(1);
-            if (upperStorage == 0xA){
-                putrs1USART("last incremented\r\n");
-            }
-            if (upperStorage == 0xB) {
-                putrs1USART("last decremented\r\n");
-            }
+            if (upperStorage == 0xA) putrs1USART("incremented +.25\r\n");
+  
+            if (upperStorage == 0xB) putrs1USART("decremented -.25\r\n");
+
+            if (upperStorage == 0x1) putrs1USART("Preset 0 V\r\n");
+
+            if (upperStorage == 0x2) putrs1USART("Preset 1 V\r\n");
+
+            if (upperStorage == 0x3) putrs1USART("Preset 2 V\r\n");
+
+            if (upperStorage == 0x4) putrs1USART("Preset 3 V\r\n");
+
+            if (upperStorage == 0x5) putrs1USART("Preset 4 V\r\n");
+
+            if (upperStorage == 0x6) putrs1USART("Preset 5 V\r\n");
+            
+        } else if (inByte[0]=='z') {
+            Menu();
+      
+        } else if (inByte[0]=='l'){
+            printf("Duty cycle is %d\r\n",longOut);
+        } else if (inByte[0]=='?'){
+            percentage = (longOut/1024)*100;
+            printf("Duty cycle is %d\r\n",percentage);
         }
-        
+
          if (((RCSTA1 >> 1) & 0x1) != 0)// TOM'S OVERFLOW ERROR DETECTOR
          {
             RCSTA1 ^ 0x2;
-            printf("TEST");
+           // printf("TEST");
+            tomCheapassFix(0);
+            tomCheapassFix(1);
          }
-        //set point: 5
-       /// else if (inByte[])
         outByteL = (unsigned char)((longOut & 0x003)<<4);
         outByteH = (unsigned char)((longOut & 0x3FC)>>2);
-        
-        package[0] = outByteL;
-        package[1] = outByteH;
-        package[2] = 0;
-        
-        putsSPI1(package);
-        //outByte[0] = readSRAM(0);
-        //outByte[1] = 0;
-       //// puts1USART(outByte);
-        //while (0 != (WriteSPI(0x55)));
-        
+
+
+  
+        SSP1BUF = outByteL;
+        while (!SSP1STATbits.BF);
+        bilko[0] = SSP1BUF;
+        //sprintf(bilko[0],"%s",bilko[0]);
+     
+        SSP1BUF = outByteH;
+        while (!SSP1STATbits.BF);
+
+        if (bilko[0]=0xFF) putrs1USART("ADC KINDA WORKING\n");
+   
+      
+ 
     }
 return phailDetectorUnit;
 }
@@ -251,20 +300,20 @@ void writeSRAM(unsigned char data, int address){
 /*TRISAbits.RA0 = 0 //!CS
    TRISAbits.RA1 = 0; //!OE
    TRISAbits.RA2 = 0; //!WE
-   TRISAbits.RA3 = 0; //addr0
-   TRISAbits.RA4 = 0; //addr1
+   TRISAbits.RA3 = 0; //latch
  */
-    unsigned char addr0;
-    unsigned char addr1;
-    unsigned char addr2;
-    unsigned char addr3;
     int delay;
+   // unsigned char addr0;
+    //unsigned char addr1;
+    //unsigned char addr2;
+    //unsigned char addr3;
 
-    addr0 = (address & 0x01);
-    addr1 = (address >> 1) & 0x01;
-    addr2 = (address >> 2) & 0x01;
-    addr3 = (address >> 3) & 0x01;
-    
+   // addr0 = (address & 0x01);
+   // addr1 = (address >> 1) & 0x01;
+   // addr2 = (address >> 2) & 0x01;
+   // addr3 = (address >> 3) & 0x01;
+
+
     PORTAbits.RA0 = 0; //SRAM enabled
     PORTAbits.RA1 = 1; //not outputing
     PORTAbits.RA2 = 1; //writing TO the SRAM
@@ -275,8 +324,16 @@ void writeSRAM(unsigned char data, int address){
     //IO pins set to be outputs
     TRISB = 0x00;
 
-    PORTAbits.RA3 = addr0;
-    PORTAbits.RA4 = addr1;
+    LATB = address;
+
+    PORTAbits.RA3 = 1; //latch address
+    PORTAbits.RA3 = 0; //de-latch address
+
+   
+
+
+    //PORTAbits.RA3 = addr0;
+    //PORTAbits.RA4 = addr1;
    // PORTAbits.RA7 = addr0;
     //PORTAbits.RA6 = addr1;
     LATB = data;
@@ -297,26 +354,32 @@ unsigned char readSRAM(int address){
    TRISAbits.RA3 = 0; //addr0
    TRISAbits.RA4 = 0; //addr1
  */
-    unsigned char addr0;
-    unsigned char addr1;
-    unsigned char addr2;
-    unsigned char addr3;
+    //unsigned char addr0;
+    //unsigned char addr1;
+    //unsigned char addr2;
+    //unsigned char addr3;
     unsigned char toSender;
     int delay;
-    addr0 = (address & 0x01);
-    addr1 = (address >> 1) & 0x01;
-    addr2 = (address >> 2) & 0x01;
-    addr3 = (address >> 3) & 0x01;
+    //addr0 = (address & 0x01);
+    //addr1 = (address >> 1) & 0x01;
+    //addr2 = (address >> 2) & 0x01;
+    //addr3 = (address >> 3) & 0x01;
     //IO pins set to inputs
-    TRISB = 0xFF;
+    TRISB = 0x00;
 
     PORTAbits.RA0 = 0; //SRAMw enabled
     PORTAbits.RA1 = 1; //not outputing
     PORTAbits.RA2 = 1; //writing TO the SRAM
 
     //LATA = address;
-    PORTAbits.RA3 = addr0;
-    PORTAbits.RA4 = addr1;
+    LATB = address;
+    PORTAbits.RA3 = 1;
+    PORTAbits.RA3 = 0;
+    
+    TRISB = 0xFF;
+    
+   // PORTAbits.RA3 = addr0;
+    //PORTAbits.RA4 = addr1;
     //PORTAbits.RA7 = addr0;
     //PORTAbits.RA6 = addr1;
 
@@ -330,4 +393,19 @@ unsigned char readSRAM(int address){
     PORTAbits.RA1 = 1; //not outputing
 
     return toSender;
+}
+
+void tomCheapassFix(int toggle){
+    if (toggle){
+         Open1USART(USART_TX_INT_OFF &
+              USART_RX_INT_OFF &
+              USART_ASYNCH_MODE &
+              USART_EIGHT_BIT &
+              USART_CONT_RX &
+              USART_BRGH_LOW,
+              129);
+    } else {
+        Close1USART();
+    }
+
 }
