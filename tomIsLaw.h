@@ -20,14 +20,16 @@
 //void TomAndHisLameUSARTFix(void);
 //void printExcitingIntroMessages(void);
 //void delay(int duration);
-unsigned char SPI_GENERAL(unsigned char);
+void tomCheapassFix(int toggle);
+void parseUserInput(unsigned char* inByte, unsigned int* longOut);
+void Menu(void);
 void Setup(void);
-void write_enable(void);
-void test(void);
-int SPI_KNIGHT_COMMANDER(void);
+
+void TOTAL_RECALL(void);
+
+unsigned char SPI_KNIGHT_COMMANDER(unsigned int* knight_command, int wait);
 void hold(void);
-unsigned char pack_rx(void);
-unsigned char localMemory(unsigned char, int,int);
+
 //void byte_tx(unsigned char data);
 unsigned int pack_tx(unsigned char command,
         unsigned char data0, unsigned char data1,
