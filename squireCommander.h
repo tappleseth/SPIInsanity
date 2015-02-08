@@ -16,6 +16,9 @@
 
 //FUNCTION PROTOTYPES
 
+void fancyADCThings(unsigned char *returnPackage);
+void checkError(unsigned char* returnPackage, unsigned char loBytes, unsigned char hiBytes);
+
 unsigned char SPI_GENERAL(unsigned char);
 void Setup(void);
 void write_enable(void);
