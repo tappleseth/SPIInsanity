@@ -20,21 +20,19 @@
 //void TomAndHisLameUSARTFix(void);
 //void printExcitingIntroMessages(void);
 //void delay(int duration);
+
+unsigned char localMemoryAlpha(unsigned char dataIn, int RW, int address);
+unsigned char localMemoryBeta(unsigned char dataIn, int RW, int address);
 void tomCheapassFix(int toggle);
 void parseUserInput(unsigned char* inByte, unsigned int* longOut);
 void Menu(void);
 void Setup(void);
 
-void TOTAL_RECALL(void);
+void TOTAL_RECALL(int toggleLocation);
+
+void TOTAL_RECALL_VOLTAGE(int placeholder);
 
 unsigned char SPI_KNIGHT_COMMANDER(unsigned int* knight_command, int wait);
-void hold(void);
-
-//void byte_tx(unsigned char data);
-unsigned int pack_tx(unsigned char command,
-        unsigned char data0, unsigned char data1,
-        unsigned char data2, unsigned char data3,
-        unsigned char status);
 
 void writeSRAM(unsigned char data, int address);
 unsigned char readSRAM(int address);
@@ -48,6 +46,7 @@ unsigned char readSRAM(int address);
 // 'C' source line config statements
 
 #include <p18F25K22.h>
+
 
 // CONFIG1H
 #pragma config FOSC = ECHP      // Oscillator Selection bits (EC oscillator, CLKOUT function on OSC2 (high power, >16 MHz))
