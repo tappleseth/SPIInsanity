@@ -168,19 +168,19 @@ return 0;//phailDetectorUnit;
 
 void checkError(unsigned char* returnPackage, unsigned char loBytes, unsigned char hiBytes){
     //need to compare duty cycle bits to ADC bits
-    unsigned int tempH, tempL, totalDC, totalPWM;
+    unsigned int tempH, tempL, totalDC, totalADC;
     int difference;
 
-    tempH = (unsigned int) hiBytes << 2;
-    tempL = (unsigned int) loBytes >> 4;
+    tempH = (unsigned int) hiBytes;
+    tempL = (unsigned int) loBytes;
 
-    totalDC = tempH + tempL;
+    totalDC = (tempH << 2) + (tempL >> 4); //OKAY
 
     tempH = (unsigned int) returnPackage[2];
     tempL = (unsigned int) returnPackage[1];
-    totalPWM = (tempH << 2) + (tempL >> 6);
+    totalADC = (tempH << 2) + (tempL >> 6);
 
-    difference = (int)totalDC - (int)totalPWM;
+    difference = (int)(totalADC - totalDC);
     /* TOM EXPLAINS THE ERROR DETECTOR
      * if each bit is +-.10% duty cycle
      * PWM and ADC bits use same resolution, both setting voltage for same thing
@@ -190,7 +190,7 @@ void checkError(unsigned char* returnPackage, unsigned char loBytes, unsigned ch
      * 2% is 20 bits difference, 5% is 50 bits difference
      * use debug mode to confirm! flag is 0xAA
      */
-    if ((difference < 10) && (difference > -10)){
+    if (((difference < 10) && (difference > 0))||((difference < 0) && (difference > -10))){
         //0xEA is the "it's all cool man" flag
         returnPackage[0] = 0xEA;
     } else if ((difference >= 10) && (difference < 20)){
@@ -202,19 +202,22 @@ void checkError(unsigned char* returnPackage, unsigned char loBytes, unsigned ch
     } else if (difference >= 50){
         //level 0, severe, too high
         returnPackage[0] = 0xDA;
-    } else if ((difference < 0) && (difference >= -10)){
+    } else if ((difference < 0) && (difference >= -20)){
         //level 2, of concern, too low
         returnPackage[0] = 0xBB;
-    } else if ((difference < -10) && (difference > -50)){
+    } else if ((difference < -20) && (difference > -50)){
         //level 1, moderate, too low
         returnPackage[0] = 0xCB;
     } else if (difference <= -50){
         //level 1, severe, too low
         returnPackage[0] = 0xDB;
     }
-
+    else {
+        returnPackage[0] = 0xAA;
+    }
+    if (difference < 0) difference = difference * (-1);
     //send the difference in voltage back to KNIGHT COMMANDER
-    returnPackage[3] = (unsigned int) difference;
+    returnPackage[3] = (unsigned char) difference;
 
     //KNIGHT COMMANDER will know what to do
 
