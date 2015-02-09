@@ -18,6 +18,7 @@
 
 void fancyADCThings(unsigned char *returnPackage);
 void checkError(unsigned char* returnPackage, unsigned char loBytes, unsigned char hiBytes);
+void localMemoryAlpha(unsigned char dataIn, int RW, int address);
 
 unsigned char SPI_GENERAL(unsigned char);
 void Setup(void);
@@ -26,7 +27,6 @@ void test(void);
 int SPI_SQUIRE_COMMANDER(void);
 void hold(void);
 unsigned char pack_rx(void);
-unsigned char localMemory(unsigned char, int,int);
 //void byte_tx(unsigned char data);
 unsigned int pack_tx(unsigned char command,
         unsigned char data0, unsigned char data1,
